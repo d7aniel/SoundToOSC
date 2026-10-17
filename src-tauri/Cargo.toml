@@ -1,9 +1,13 @@
 [package]
-name = "sound-to-osc"
+name = "SoundToOSC"
 version = "0.1.0"
 description = "Audio Analysis to OSC Transmitter for Andragon"
 authors = ["Emmelab"]
 edition = "2021"
+
+[[bin]]
+name = "SoundToOSC"
+path = "src/main.rs"
 
 [lib]
 name = "sound_to_osc_lib"
