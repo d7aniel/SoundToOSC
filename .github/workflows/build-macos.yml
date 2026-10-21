@@ -32,8 +32,35 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Build Tauri app
-        run: npx @tauri-apps/cli build
+      - name: Build Tauri app (App bundle only)
+        # We tell Tauri to build just the bundle app, avoiding automatic DMG packaging before signing
+        run: npx @tauri-apps/cli build --bundles app
+
+      - name: Sign App Bundle (Ad-hoc)
+        # This applies a local ad-hoc signature so macOS recognizes the bundle structure and allows the "Open Anyway" prompt
+        run: |
+          codesign --force --deep -s - src-tauri/target/release/bundle/macos/SoundToOSC.app
+
+      - name: Create DMG using native macOS tools
+        # We use macOS's native hdiutil to pack the signed .app into a clean DMG
+        run: |
+          DMG_NAME="SoundToOSC_macos.dmg"
+          APP_PATH="src-tauri/target/release/bundle/macos/SoundToOSC.app"
+          
+          # Create a temporary folder for staging the DMG contents
+          mkdir -p dist_dmg
+          cp -R "$APP_PATH" dist_dmg/
+          ln -s /Applications dist_dmg/Applications
+          
+          # Generate the final compressed DMG image
+          hdiutil create -volname "SoundToOSC" \
+                         -srcfolder dist_dmg \
+                         -ov -format UDZO \
+                         "$DMG_NAME"
+          
+          # Move DMG to Tauri's expected output path for consistency
+          mkdir -p src-tauri/target/release/bundle/dmg
+          mv "$DMG_NAME" src-tauri/target/release/bundle/dmg/
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
@@ -41,5 +68,4 @@ jobs:
           name: SoundToOSC-macOS-DMG
           path: |
             src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/*/release/bundle/dmg/*.dmg
           if-no-files-found: error
