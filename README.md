@@ -62,3 +62,9 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # Build production bundle
 npm run tauri build
 ```
+
+---
+
+## 🍏 macOS Installation & Security
+Para instrucciones de instalación y solución de problemas con Gatekeeper en macOS Sequoia, consulta [README_MACOS.md](./README_MACOS.md).
+For macOS installation and Gatekeeper security troubleshooting, see [README_MACOS.md](./README_MACOS.md).

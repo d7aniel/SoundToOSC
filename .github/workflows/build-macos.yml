@@ -2,6 +2,7 @@ name: Build macOS Desktop App
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-macos:
@@ -40,16 +41,19 @@ jobs:
         # This applies a local ad-hoc signature so macOS recognizes the bundle structure and allows the "Open Anyway" prompt
         run: |
           codesign --force --deep -s - src-tauri/target/release/bundle/macos/SoundToOSC.app
+          # Verify that the bundle seal is strictly valid
+          codesign --verify --deep --strict --verbose=2 src-tauri/target/release/bundle/macos/SoundToOSC.app
 
       - name: Create DMG using native macOS tools
         # We use macOS's native hdiutil to pack the signed .app into a clean DMG
         run: |
-          DMG_NAME="SoundToOSC_macos.dmg"
+          DMG_NAME="SoundToOSC-macOS.dmg"
           APP_PATH="src-tauri/target/release/bundle/macos/SoundToOSC.app"
           
           # Create a temporary folder for staging the DMG contents
           mkdir -p dist_dmg
-          cp -R "$APP_PATH" dist_dmg/
+          # Use ditto to preserve permissions, symlinks, and code signature integrity
+          ditto "$APP_PATH" "dist_dmg/SoundToOSC.app"
           ln -s /Applications dist_dmg/Applications
           
           # Generate the final compressed DMG image
@@ -65,7 +69,7 @@ jobs:
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
-          name: SoundToOSC-macOS-DMG
+          name: SoundToOSC-macOS
           path: |
             src-tauri/target/release/bundle/dmg/*.dmg
           if-no-files-found: error
